@@ -204,6 +204,7 @@ def main():
     if not instances:
         sys.stdout.write("Could not start instance")
         sys.exit(1)
+    time.sleep(5)
     instance = instances[0]
 
     instance.create_tags(Tags=[{'Key':'Name','Value':host_tag}])
