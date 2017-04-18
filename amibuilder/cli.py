@@ -88,6 +88,7 @@ def main():
     parser.add_argument('-i', '--instance-type', help='EC2 instance type')
     parser.add_argument('-n', '--target-name', help='target AMI image name')
     parser.add_argument('-m', '--target-description', help='target AMI description')
+    parser.add_argument('-p', '--aws-profile', help='Use credentials from profile stored in AWS configuration file')
     parser.add_argument('-r', '--region', help='AWS region')
     parser.add_argument('-s', '--subnet-id', help='AWS subnet id')
     parser.add_argument('-t', '--host-tag', help='tag that will be applied to temporary instance')
@@ -101,15 +102,15 @@ def main():
     config.set('main', 'host_tag', 'ami-builder')
     config.set('main', 'target_name', 'ami-builder')
     config.set('main', 'target_description', '')
-    config.set('main', 'region', 'us-east-1')
     config.set('main', 'instance_type', 't2.small')
     config.set('main', 'subnet_id', '')
     config.set('main', 'source_ami', 'ami-80861296')
     config.set('main', 'security_groups', '')
     config.set('main', 'overwrite', 'false')
+    config.set('main', 'aws_profile', '')
     config.set('main', 'access_key', '')
     config.set('main', 'secret_key', '')
-
+    config.set('main', 'region', 'us-east-1')
 
     # load config file
     if args.config:
@@ -137,36 +138,37 @@ def main():
     source_ami         = args.source_ami         if args.source_ami         else config.get('main', 'source_ami')
     security_groups    = args.security_groups    if args.security_groups    else config.get('main', 'security_groups')
     overwrite          = args.overwrite          if args.overwrite          else config.get('main', 'overwrite')
+    aws_profile        = args.aws_profile        if args.aws_profile        else config.get('main', 'aws_profile')
     access_key         = config.get('main', 'access_key')
     secret_key         = config.get('main', 'secret_key')
 
     security_groups = list(map(str.strip, security_groups.split(',')))
     security_groups = [x for x in security_groups if x] # filter out empty values
 
-    if not access_key:
-        sys.stdout.write("an access_key must be specified in the config file")
+    if not access_key and len(aws_profile) == 0:
+        sys.stdout.write("an access_key (or an aws_profile) must be specified in the config file")
         sys.exit(1)
     
-    if not secret_key:
-        sys.stdout.write("an secret_key must be specified in the config file")
+    if not secret_key and len(aws_profile) == 0:
+        sys.stdout.write("an secret_key (or an aws_profile) must be specified in the config file")
         sys.exit(1)
 
     start_time = int(time.time())
 
     script = convert_to_bash(filepath)
 
-    ec2 = boto3.resource('ec2',
-        aws_access_key_id=access_key,
-        aws_secret_access_key=secret_key,
-        region_name=region
-    )
 
-    ec2client = boto3.client('ec2',
-        aws_access_key_id=access_key,
-        aws_secret_access_key=secret_key,
-        region_name=region
-    )
+    if len(aws_profile) > 0:
+        session = boto3.Session(profile_name=aws_profile)
+    else:
+        session = boto3.Session(
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            region_name=region
+        )
 
+    ec2 = session.resource('ec2')
+    ec2client = session.client('ec2')
 
     # before we start, see if an image already exists
     result = ec2client.describe_images(Filters=[{'Name':'name','Values':[target_name]}])

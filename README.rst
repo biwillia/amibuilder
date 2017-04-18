@@ -13,14 +13,16 @@ make. Here is a sample configuration file:
 
     [main]
 
-    # The AWS region you want to use
-    region = us-east-1
-
-    # Your AWS Access Key ID goes here
-    access_key = ANLK3UHQKIAJF4MLBVF7
-
-    # Your AWS Secret Key goes here
-    secret_key = vhhHzsDIzMbFgTDMWEYIbYyUaFFIY0cyBh
+    # You can specify either an AWS profile name here,
+    # or manually specify region, access_key and secret_key.
+    # AWS profiles are usually stored in the ~/.aws/config file
+    aws_profile = profile
+    
+    # The AWS credentials to use; if aws_profile is specified,
+    # the following three settings are ignored
+    #region = us-east-1
+    #access_key = ANLK3UHQKIAJF4MLBVF7
+    #secret_key = vhhHzsDIzMbFgTDMWEYIbYyUaFFIY0cyBh
 
     # the host tag contains the Name tag that will be applied to
     # the temporary EC2 server instance used during AMI creation
@@ -57,10 +59,10 @@ Usage
 
 ::
 
-    usage: amibuilder [-h] [-a SOURCE_AMI] [-c CONFIG] [-d DEBUG] [-f FILE]
-                      [-g SECURITY_GROUPS] [-i INSTANCE_TYPE] [-n TARGET_NAME]
-                      [-m TARGET_DESCRIPTION] [-r REGION] [-s SUBNET_ID]
-                      [-t HOST_TAG] [-o OVERWRITE] [-u SSH_USER]
+    usage: local.py [-h] [-a SOURCE_AMI] [-c CONFIG] [-d DEBUG] [-f FILE]
+                    [-g SECURITY_GROUPS] [-i INSTANCE_TYPE] [-n TARGET_NAME]
+                    [-m TARGET_DESCRIPTION] [-p AWS_PROFILE] [-r REGION]
+                    [-s SUBNET_ID] [-t HOST_TAG] [-o OVERWRITE]
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -79,6 +81,9 @@ Usage
                             target AMI image name
       -m TARGET_DESCRIPTION, --target-description TARGET_DESCRIPTION
                             target AMI description
+      -p AWS_PROFILE, --aws-profile AWS_PROFILE
+                            Use credentials from profile stored in AWS
+                            configuration file
       -r REGION, --region REGION
                             AWS region
       -s SUBNET_ID, --subnet-id SUBNET_ID
@@ -87,8 +92,6 @@ Usage
                             tag that will be applied to temporary instance
       -o OVERWRITE, --overwrite OVERWRITE
                             set to true if you want to overwrite an existing AMI
-      -u SSH_USER, --ssh-user SSH_USER
-                            SSH user name
 
 Limitations
 ===========
