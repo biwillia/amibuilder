@@ -125,7 +125,7 @@ def main():
 
     config_file = os.path.expanduser(config_file)
     if not config.read(config_file):
-        sys.stdout.write("Could not open config file.  Use --help for help screen")
+        sys.stdout.write("Could not open config file.  Use --help for help screen\n")
         sys.exit(1)
 
 
@@ -256,7 +256,6 @@ def main():
     )
     image.wait_until_exists()
 
-
     time.sleep(30)
 
     sys.stdout.write("Terminating temporary instance...\n")
@@ -265,7 +264,3 @@ def main():
     finish_time = int(time.time())
     sys.stdout.write("Image " + image.name + " (" + image.id + ") created successfully!  Total run time: " + str(finish_time-start_time) + " seconds.\n")
 
-
-
-if __name__ == "__main__":
-    main()

@@ -1,4 +1,4 @@
 
 
-import cli
+from . import cli
 
