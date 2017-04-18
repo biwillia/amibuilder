@@ -14,7 +14,6 @@ import time
 def convert_to_bash(script_file):
     cmds = []
     joinline = False
-    start_time = int(time.time())
 
     # search for a shebang
     with open(script_file) as fp:
@@ -155,7 +154,7 @@ def main():
         sys.stdout.write("an secret_key must be specified in the config file")
         sys.exit(1)
 
-
+    start_time = int(time.time())
 
     script = convert_to_bash(filepath)
 
