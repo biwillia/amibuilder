@@ -92,7 +92,6 @@ def main():
     parser.add_argument('-s', '--subnet-id', help='AWS subnet id')
     parser.add_argument('-t', '--host-tag', help='tag that will be applied to temporary instance')
     parser.add_argument('-o', '--overwrite', help='set to true if you want to overwrite an existing AMI')
-    parser.add_argument('-u', '--ssh-user', help='SSH user name')
     args = parser.parse_args()
 
 
@@ -106,7 +105,6 @@ def main():
     config.set('main', 'instance_type', 't2.small')
     config.set('main', 'subnet_id', '')
     config.set('main', 'source_ami', 'ami-80861296')
-    config.set('main', 'ssh_user', 'ubuntu')
     config.set('main', 'security_groups', '')
     config.set('main', 'overwrite', 'false')
     config.set('main', 'access_key', '')
@@ -137,7 +135,6 @@ def main():
     instance_type      = args.instance_type      if args.instance_type      else config.get('main', 'instance_type')
     subnet_id          = args.subnet_id          if args.subnet_id          else config.get('main', 'subnet_id')
     source_ami         = args.source_ami         if args.source_ami         else config.get('main', 'source_ami')
-    ssh_user           = args.ssh_user           if args.ssh_user           else config.get('main', 'ssh_user')
     security_groups    = args.security_groups    if args.security_groups    else config.get('main', 'security_groups')
     overwrite          = args.overwrite          if args.overwrite          else config.get('main', 'overwrite')
     access_key         = config.get('main', 'access_key')
