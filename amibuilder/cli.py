@@ -92,7 +92,8 @@ def main():
     parser.add_argument('-r', '--region', help='AWS region')
     parser.add_argument('-s', '--subnet-id', help='AWS subnet id')
     parser.add_argument('-t', '--host-tag', help='tag that will be applied to temporary instance')
-    parser.add_argument('-o', '--overwrite', help='set to true if you want to overwrite an existing AMI')
+    parser.add_argument('-T', '--target-type', help='ami (default) to build an AMI; instance to just build an instance')
+    parser.add_argument('-o', '--overwrite', help='set to true if you want to overwrite an existing AMI', action='store_true')
     args = parser.parse_args()
 
 
@@ -100,6 +101,7 @@ def main():
     config = configparser.ConfigParser()
     config.add_section('main')
     config.set('main', 'host_tag', 'ami-builder')
+    config.set('main', 'target_type', 'ami')
     config.set('main', 'target_name', 'ami-builder')
     config.set('main', 'target_description', '')
     config.set('main', 'instance_type', 't2.small')
@@ -111,26 +113,21 @@ def main():
     config.set('main', 'access_key', '')
     config.set('main', 'secret_key', '')
     config.set('main', 'region', 'us-east-1')
+    config.set('main', 'file', '')
 
-    # load config file
+    # load config file (if desired)
     if args.config:
-        config_file = args.config
-    else:
-        if os.path.isfile(os.path.expanduser('~/.ami-builder.conf')):
-            config_file = os.path.expanduser('~/.ami-builder.conf')
-        else:
-            config_file = '/etc/ami-builder.conf'
-
-    config_file = os.path.expanduser(config_file)
-    if not config.read(config_file):
-        sys.stdout.write("Could not open config file.  Use --help for help screen\n")
-        sys.exit(1)
+        config_file = os.path.expanduser(args.config)
+        if not config.read(config_file):
+            sys.stdout.write("Could not open config file.  Use --help for help screen\n")
+            sys.exit(1)
 
 
     # load values from config file and command line
     host_tag           = args.host_tag           if args.host_tag           else config.get('main', 'host_tag')
     filepath           = args.file               if args.file               else config.get('main', 'file')
     target_name        = args.target_name        if args.target_name        else config.get('main', 'target_name')
+    target_type        = args.target_type        if args.target_type        else config.get('main', 'target_type')
     target_description = args.target_description if args.target_description else config.get('main', 'target_description')
     region             = args.region             if args.region             else config.get('main', 'region')
     instance_type      = args.instance_type      if args.instance_type      else config.get('main', 'instance_type')
@@ -146,14 +143,24 @@ def main():
     security_groups = [x for x in security_groups if x] # filter out empty values
 
     if not access_key and len(aws_profile) == 0:
-        sys.stdout.write("an access_key (or an aws_profile) must be specified in the config file")
+        sys.stdout.write("an access_key (or an aws_profile) must be specified in the config file\n")
         sys.exit(1)
     
     if not secret_key and len(aws_profile) == 0:
-        sys.stdout.write("an secret_key (or an aws_profile) must be specified in the config file")
+        sys.stdout.write("an secret_key (or an aws_profile) must be specified in the config file\n")
+        sys.exit(1)
+
+    if target_type != 'ami' and target_type != 'instance':
+        sys.stdout.write("unknown target type '" + target_type + "'\n")
+        sys.exit(1)
+
+    if not filepath:
+        sys.stdout.write("a script file must be specified (either with --file or via a config file)\n")
         sys.exit(1)
 
     start_time = int(time.time())
+
+
 
     script = convert_to_bash(filepath)
 
@@ -232,6 +239,14 @@ def main():
         instance.terminate()
         sys.exit(1)
     
+
+    if target_type == 'instance':
+        # operator just wants an instance, not an AMI
+        finish_time = int(time.time())
+        sys.stdout.write("Instance " + host_tag + " (" + instance.id + ") created successfully! Public DNS: " + instance.public_dns_name + " Total run time: " + str(finish_time-start_time) + " seconds.\n")
+        sys.exit(0)
+
+
     # stop the instance in preparation for making an image (ami)
 
     time.sleep(30) # for good measure
@@ -263,3 +278,4 @@ def main():
     finish_time = int(time.time())
     sys.stdout.write("Image " + image.name + " (" + image.id + ") created successfully!  Total run time: " + str(finish_time-start_time) + " seconds.\n")
 
+    sys.exit(0)
