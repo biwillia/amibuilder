@@ -61,12 +61,12 @@ def convert_to_bash(script_file):
             for l in reader:
                 line = [x for x in l if x] # filter out empty values
             if not line or len(line) != 2:
-                sys.stdout.write("could not parse line: " + cmd)
+                sys.stdout.write("could not parse line: " + cmd + "\n")
                 sys.exit(1)
 
             inf = os.path.expanduser(line[0])
             if not os.path.isfile(inf):
-                sys.stdout.write("could open file: " + cmd)
+                sys.stdout.write("could not open file: " + cmd + "\n")
                 sys.exit(1)
             with open(line[0], 'rb') as fp:
                 content = fp.read()
