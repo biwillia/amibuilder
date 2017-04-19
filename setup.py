@@ -5,7 +5,7 @@ from distutils.core import setup
 setup(
   name = 'amibuilder',
   packages = ['amibuilder'],
-  version = '0.5.1',
+  version = '0.5.2',
   description = 'A utility to build an AMI from a shell script or Dockerfile',
   author = 'Ben Williams',
   author_email = 'hello@flex.io',
