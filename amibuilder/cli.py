@@ -11,7 +11,7 @@ import base64
 import time
 
 
-def convert_to_bash(script_file):
+def convert_to_bash(script_file, passed_args):
     cmds = []
     joinline = False
 
@@ -49,7 +49,26 @@ def convert_to_bash(script_file):
     # next, run each individual command
     bash = '#!/bin/bash\n'
 
+    args = {}
+
     for cmd in cmds:
+
+        # replace any args
+        for key,value in args.items():
+            cmd = cmd.replace('${'+key+'}', value)
+
+        if cmd[:4] == 'ARG ':
+            arr = cmd[4:].split('=')
+
+            # if no equals sign, add an empty value as the default value
+            if len(arr) == 1:
+                arr.append('')
+            args[ arr[0] ] = arr[1]
+            
+            # see if this argument value was passed to us; if so, use it
+            if arr[0] in passed_args:
+                args[ arr[0] ] = passed_args[ arr[0] ]
+
         if cmd[:4] == 'RUN ':
             bash += cmd[4:] + '\n'
         if cmd[:5] == 'COPY ':
@@ -71,7 +90,7 @@ def convert_to_bash(script_file):
                 content = fp.read()
                 b64 = base64.b64encode(content).decode('utf-8')
                 bash += "echo " + b64 + " | base64 -d > " + line[1] + "\n"
-            
+
     return bash
 
 
@@ -81,6 +100,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-a', '--source-ami', help='source AMI image id')
+    parser.add_argument('-b', '--build-arg', nargs='*', action='append', help='specify values for ARG arguments in Dockerfiles')
     parser.add_argument('-c', '--config', help='configuration file')
     parser.add_argument('-d', '--debug', help='print debug info')
     parser.add_argument('-f', '--file', help='script file')
@@ -95,7 +115,6 @@ def main():
     parser.add_argument('-T', '--target-type', help='ami (default) to build an AMI; instance to just build an instance')
     parser.add_argument('-o', '--overwrite', help='set to true if you want to overwrite an existing AMI', action='store_true')
     args = parser.parse_args()
-
 
     # set defaults for config object
     config = configparser.ConfigParser()
@@ -136,11 +155,22 @@ def main():
     security_groups    = args.security_groups    if args.security_groups    else config.get('main', 'security_groups')
     overwrite          = args.overwrite          if args.overwrite          else config.get('main', 'overwrite')
     aws_profile        = args.aws_profile        if args.aws_profile        else config.get('main', 'aws_profile')
+    build_arg          = args.build_arg          if args.build_arg          else []
     access_key         = config.get('main', 'access_key')
     secret_key         = config.get('main', 'secret_key')
 
     security_groups = list(map(str.strip, security_groups.split(',')))
     security_groups = [x for x in security_groups if x] # filter out empty values
+
+
+    # convert buildarg from array of KEY=VALUE to dictionary
+    arg_dict = {}
+    for arglist in build_arg:
+        for arg in arglist:
+            arr = arg.split('=')
+            if len(arr) != 2:
+                continue
+            arg_dict[ arr[0] ] = arr[1]
 
     if not access_key and len(aws_profile) == 0:
         sys.stdout.write("an access_key (or an aws_profile) must be specified in the config file\n")
@@ -162,7 +192,7 @@ def main():
 
 
 
-    script = convert_to_bash(filepath)
+    script = convert_to_bash(filepath, arg_dict)
 
 
     if len(aws_profile) > 0:

@@ -59,44 +59,49 @@ Usage
 
 ::
 
-    usage: local.py [-h] [-a SOURCE_AMI] [-c CONFIG] [-d DEBUG] [-f FILE]
-                    [-g SECURITY_GROUPS] [-i INSTANCE_TYPE] [-n TARGET_NAME]
-                    [-m TARGET_DESCRIPTION] [-p AWS_PROFILE] [-r REGION]
-                    [-s SUBNET_ID] [-t HOST_TAG] [-o OVERWRITE]
+    usage: local.py [-h] [-a SOURCE_AMI] [-b [BUILD_ARG [BUILD_ARG ...]]]
+                    [-c CONFIG] [-d DEBUG] [-f FILE] [-g SECURITY_GROUPS]
+                    [-i INSTANCE_TYPE] [-n TARGET_NAME] [-m TARGET_DESCRIPTION]
+                    [-p AWS_PROFILE] [-r REGION] [-s SUBNET_ID] [-t HOST_TAG]
+                    [-T TARGET_TYPE] [-o]
 
     optional arguments:
-      -h, --help            show this help message and exit
-      -a SOURCE_AMI, --source-ami SOURCE_AMI
+    -h, --help            show this help message and exit
+    -a SOURCE_AMI, --source-ami SOURCE_AMI
                             source AMI image id
-      -c CONFIG, --config CONFIG
+    -b [BUILD_ARG [BUILD_ARG ...]], --build-arg [BUILD_ARG [BUILD_ARG ...]]
+                            specify values for ARG arguments in Dockerfiles
+    -c CONFIG, --config CONFIG
                             configuration file
-      -d DEBUG, --debug DEBUG
+    -d DEBUG, --debug DEBUG
                             print debug info
-      -f FILE, --file FILE  script file
-      -g SECURITY_GROUPS, --security-groups SECURITY_GROUPS
+    -f FILE, --file FILE  script file
+    -g SECURITY_GROUPS, --security-groups SECURITY_GROUPS
                             one or more security groups (comma-delimited)
-      -i INSTANCE_TYPE, --instance-type INSTANCE_TYPE
+    -i INSTANCE_TYPE, --instance-type INSTANCE_TYPE
                             EC2 instance type
-      -n TARGET_NAME, --target-name TARGET_NAME
+    -n TARGET_NAME, --target-name TARGET_NAME
                             target AMI image name
-      -m TARGET_DESCRIPTION, --target-description TARGET_DESCRIPTION
+    -m TARGET_DESCRIPTION, --target-description TARGET_DESCRIPTION
                             target AMI description
-      -p AWS_PROFILE, --aws-profile AWS_PROFILE
+    -p AWS_PROFILE, --aws-profile AWS_PROFILE
                             Use credentials from profile stored in AWS
                             configuration file
-      -r REGION, --region REGION
+    -r REGION, --region REGION
                             AWS region
-      -s SUBNET_ID, --subnet-id SUBNET_ID
+    -s SUBNET_ID, --subnet-id SUBNET_ID
                             AWS subnet id
-      -t HOST_TAG, --host-tag HOST_TAG
+    -t HOST_TAG, --host-tag HOST_TAG
                             tag that will be applied to temporary instance
-      -o OVERWRITE, --overwrite OVERWRITE
-                            set to true if you want to overwrite an existing AMI
+    -T TARGET_TYPE, --target-type TARGET_TYPE
+                            ami (default) to build an AMI; instance to just build
+                            an instance
+    -o, --overwrite       set to true if you want to overwrite an existing AMI
 
 Limitations
 ===========
 
-If you use Dockerfile scripts, only the RUN and COPY commands are
+If you use Dockerfile scripts, only the ARG, RUN and COPY commands are
 supported at this time. The COPY commands are only recommended for
 smaller files, such as .conf files. If you want to transfer large data
 payloads, a more robust solution would be to store them in an S3 bucket,
