@@ -300,7 +300,13 @@ def main():
     )
     image.wait_until_exists()
 
-    time.sleep(30)
+    sys.stdout.write("Waiting for AMI to become available...\n")
+    time.sleep(5)
+    counter = 40  # wait a max of 20 minutes
+    while (image.state != 'available' and counter > 0):
+        time.sleep(30)
+        image.reload()
+        counter = counter - 1
 
     sys.stdout.write("Terminating temporary instance...\n")
     instance.terminate()
