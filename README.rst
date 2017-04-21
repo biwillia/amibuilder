@@ -9,6 +9,7 @@ Installation
 You can easily install the latest version of amibuilder with pip.  Alternitavely, you can download the source directly from this repository.
 
 ::
+
     pip install amibuilder
 
 
