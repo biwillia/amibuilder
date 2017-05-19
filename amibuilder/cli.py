@@ -283,9 +283,14 @@ def main():
     # stop the instance in preparation for making an image (ami)
 
     time.sleep(30) # for good measure
-    time.sleep(wait)
+
+    if wait > 0:
+        sys.stdout.write("Instance status checked returned ok.  Waiting an additional " + str(wait) + " seconds...\n")
+        time.sleep(wait)
+        sys.stdout.write("Stopping instance...\n")
+    else:
+        sys.stdout.write("Instance status checked returned ok.  Stopping instance...\n")
     
-    sys.stdout.write("Instance status checked returned ok.  Stopping instance...\n")
     instance.stop()
     instance.wait_until_stopped()
     time.sleep(5)
