@@ -114,6 +114,7 @@ def main():
     parser.add_argument('-t', '--host-tag', help='tag that will be applied to temporary instance')
     parser.add_argument('-T', '--target-type', help='ami (default) to build an AMI; instance to just build an instance')
     parser.add_argument('-o', '--overwrite', help='set to true if you want to overwrite an existing AMI', action='store_true')
+    parser.add_argument('-w', '--wait', help='addition wait, in seconds, before instance is terminated and AMI is built')
     args = parser.parse_args()
 
     # set defaults for config object
@@ -133,6 +134,7 @@ def main():
     config.set('main', 'secret_key', '')
     config.set('main', 'region', 'us-east-1')
     config.set('main', 'file', '')
+    config.set('main', 'wait', '0')
 
     # load config file (if desired)
     if args.config:
@@ -155,6 +157,7 @@ def main():
     security_groups    = args.security_groups    if args.security_groups    else config.get('main', 'security_groups')
     overwrite          = args.overwrite          if args.overwrite          else config.get('main', 'overwrite')
     aws_profile        = args.aws_profile        if args.aws_profile        else config.get('main', 'aws_profile')
+    wait               = args.wait               if args.wait               else config.get('main', 'wait')
     build_arg          = args.build_arg          if args.build_arg          else []
     access_key         = config.get('main', 'access_key')
     secret_key         = config.get('main', 'secret_key')
@@ -189,7 +192,7 @@ def main():
         sys.exit(1)
 
     start_time = int(time.time())
-
+    wait = int(wait)
 
 
     script = convert_to_bash(filepath, arg_dict)
@@ -280,6 +283,8 @@ def main():
     # stop the instance in preparation for making an image (ami)
 
     time.sleep(30) # for good measure
+    time.sleep(wait)
+    
     sys.stdout.write("Instance status checked returned ok.  Stopping instance...\n")
     instance.stop()
     instance.wait_until_stopped()
