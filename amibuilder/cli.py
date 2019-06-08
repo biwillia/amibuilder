@@ -10,7 +10,6 @@ import csv
 import base64
 import time
 
-
 def convert_to_bash(script_file, passed_args):
     cmds = []
     joinline = False
@@ -115,6 +114,7 @@ def main():
     parser.add_argument('-T', '--target-type', help='ami (default) to build an AMI; instance to just build an instance')
     parser.add_argument('-o', '--overwrite', help='set to true if you want to overwrite an existing AMI', action='store_true')
     parser.add_argument('-w', '--wait', help='addition wait, in seconds, before instance is terminated and AMI is built')
+    parser.add_argument('-v', '--volume_sizes', help='comma delimited list of volume sizes, e.g.   /dev/xvda 30, /dev/xvdb 40')
     args = parser.parse_args()
 
     # set defaults for config object
@@ -135,6 +135,7 @@ def main():
     config.set('main', 'region', 'us-east-1')
     config.set('main', 'file', '')
     config.set('main', 'wait', '0')
+    config.set('main', 'volume_sizes', '')
 
     # load config file (if desired)
     if args.config:
@@ -158,6 +159,7 @@ def main():
     overwrite          = args.overwrite          if args.overwrite          else config.get('main', 'overwrite')
     aws_profile        = args.aws_profile        if args.aws_profile        else config.get('main', 'aws_profile')
     wait               = args.wait               if args.wait               else config.get('main', 'wait')
+    volume_sizes       = args.volume_sizes       if args.volume_sizes       else config.get('main', 'volume_sizes')
     build_arg          = args.build_arg          if args.build_arg          else []
     access_key         = config.get('main', 'access_key')
     secret_key         = config.get('main', 'secret_key')
@@ -238,6 +240,19 @@ def main():
 
     if security_groups:
         params['SecurityGroups'] = security_groups
+
+    block_device_mappings = []
+    if len(volume_sizes) > 0:
+        volume_arr = [x.strip() for x in volume_sizes.split(',')]
+        for entry in volume_arr:
+            entry = [x.strip() for x in entry.split(' ')]
+            if len(entry) != 2:
+                sys.stdout.write("Volume entry must have 2 elements, device name and size\n")
+                sys.exit(1)
+            block_device_mappings.append({"DeviceName": entry[0], "Ebs": { "VolumeSize": int(entry[1]) }})
+    
+    if len(block_device_mappings) > 0:
+        params['BlockDeviceMappings'] = block_device_mappings
 
     sys.stdout.write("Creating temporary instance\n")
     instances = ec2.create_instances(**params)
