@@ -9,6 +9,7 @@ import io
 import csv
 import base64
 import time
+import urllib
 
 def convert_to_bash(script_file, passed_args):
     cmds = []
@@ -114,6 +115,7 @@ def main():
     parser.add_argument('-T', '--target-type', help='ami (default) to build an AMI; instance to just build an instance')
     parser.add_argument('-o', '--overwrite', help='set to true if you want to overwrite an existing AMI', action='store_true')
     parser.add_argument('-w', '--wait', help='addition wait, in seconds, before instance is terminated and AMI is built')
+    parser.add_argument('-u', '--wait-url', help='public-facing URL to check; link should return non-zero, non-empty value when instance initialization is finished')
     parser.add_argument('-v', '--volume_sizes', help='comma delimited list of volume sizes, e.g.   /dev/xvda 30, /dev/xvdb 40')
     args = parser.parse_args()
 
@@ -135,6 +137,7 @@ def main():
     config.set('main', 'region', 'us-east-1')
     config.set('main', 'file', '')
     config.set('main', 'wait', '0')
+    config.set('main', 'wait_url', '')
     config.set('main', 'volume_sizes', '')
 
     # load config file (if desired)
@@ -159,6 +162,7 @@ def main():
     overwrite          = args.overwrite          if args.overwrite          else config.get('main', 'overwrite')
     aws_profile        = args.aws_profile        if args.aws_profile        else config.get('main', 'aws_profile')
     wait               = args.wait               if args.wait               else config.get('main', 'wait')
+    wait_url           = args.wait_url           if args.wait_url           else config.get('main', 'wait_url')
     volume_sizes       = args.volume_sizes       if args.volume_sizes       else config.get('main', 'volume_sizes')
     build_arg          = args.build_arg          if args.build_arg          else []
     access_key         = config.get('main', 'access_key')
@@ -294,18 +298,30 @@ def main():
         sys.stdout.write("Instance " + host_tag + " (" + instance.id + ") created successfully! Public DNS: " + instance.public_dns_name + " Total run time: " + str(finish_time-start_time) + " seconds.\n")
         sys.exit(0)
 
+    sys.stdout.write("Instance status checked returned ok.\n")
 
     # stop the instance in preparation for making an image (ami)
 
-    time.sleep(30) # for good measure
+    if len(wait_url) > 0:
+        print("Waiting for non-zero, non-empty value from " + wait_url)
+        while True:
+            headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'}
+            req = urllib.request.Request(wait_url, data = None, headers=headers)
+            contents = urllib.request.urlopen(req).read().decode('utf-8').strip()
+            print("Received '" + contents + "'")
+            if contents != '' and contents != '0':
+                break
+            time.sleep(30)
+    else:
+        sys.stdout.write("Waiting 30 seconds for good measure...\n")
+        time.sleep(30) # for good measure
 
     if wait > 0:
-        sys.stdout.write("Instance status checked returned ok.  Waiting an additional " + str(wait) + " seconds...\n")
+        sys.stdout.write("Waiting an additional " + str(wait) + " seconds...\n")
         time.sleep(wait)
-        sys.stdout.write("Stopping instance...\n")
-    else:
-        sys.stdout.write("Instance status checked returned ok.  Stopping instance...\n")
-    
+
+    sys.stdout.write("Stopping instance...\n")
+        
     instance.stop()
     instance.wait_until_stopped()
     time.sleep(5)
